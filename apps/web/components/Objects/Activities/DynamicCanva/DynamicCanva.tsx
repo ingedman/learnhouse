@@ -32,11 +32,16 @@ import TableHeader from '@tiptap/extension-table-header'
 import TableRow from '@tiptap/extension-table-row'
 import TableCell from '@tiptap/extension-table-cell'
 import UserBlock from '@components/Objects/Editor/Extensions/Users/UserBlock'
+import { getLinkExtension } from '@components/Objects/Editor/EditorConf'
+import TableOfContents from './TableOfContents'
+import { CustomHeading } from './CustomHeadingExtenstion'
 
 interface Editor {
   content: string
   activity: any
 }
+
+
 
 function Canva(props: Editor) {
   /**
@@ -57,7 +62,20 @@ function Canva(props: Editor) {
   const editor: any = useEditor({
     editable: isEditable,
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        heading: false,
+        bulletList: {
+          HTMLAttributes: {
+            class: 'bullet-list',
+          },
+        },
+        orderedList: {
+          HTMLAttributes: {
+            class: 'ordered-list',
+          },
+        },
+      }),
+      CustomHeading,
       NoTextInput,
       // Custom Extensions
       InfoCallout.configure({
@@ -112,6 +130,7 @@ function Canva(props: Editor) {
       Table.configure({
         resizable: true,
       }),
+      getLinkExtension(),
       TableRow,
       TableHeader,
       TableCell,
@@ -124,7 +143,10 @@ function Canva(props: Editor) {
     <EditorOptionsProvider options={{ isEditable: false }}>
       <CanvaWrapper>
         <AICanvaToolkit activity={props.activity} editor={editor} />
-        <EditorContent editor={editor} />
+        <ContentWrapper>
+          <TableOfContents editor={editor} />
+          <EditorContent editor={editor} />
+        </ContentWrapper>
       </CanvaWrapper>
     </EditorOptionsProvider>
   )
@@ -133,33 +155,46 @@ function Canva(props: Editor) {
 const CanvaWrapper = styled.div`
   width: 100%;
   margin: 0 auto;
+`
 
-  .bubble-menu {
-    display: flex;
-    background-color: #0d0d0d;
-    padding: 0.2rem;
-    border-radius: 0.5rem;
+const ContentWrapper = styled.div`
+  display: flex;
+  width: 100%;
+  height: 100%;
 
-    button {
-      border: none;
-      background: none;
-      color: #fff;
-      font-size: 0.85rem;
-      font-weight: 500;
-      padding: 0 0.2rem;
-      opacity: 0.6;
+  > div:first-child {
+    width: 20%;
+    padding-right: 1rem;
+  }
 
-      &:hover,
-      &.is-active {
-        opacity: 1;
-      }
+  > div:last-child {
+    width: 80%;
+  }
+
+  // Only apply flex layout when there are multiple children (table of contents present)
+  &:has(> div:first-child:not(:last-child)) {
+    > div:first-child {
+      width: 20%;
+      padding-right: 1rem;
+    }
+
+    > div:last-child {
+      width: 80%;
     }
   }
 
-  // disable chrome outline
+  // When there's only one child (no table of contents), make it full width
+  &:has(> div:first-child:last-child) {
+    > div:first-child {
+      width: 100%;
+      padding-right: 0;
+    }
+  }
 
   .ProseMirror {
-    // Workaround to disable editor from being edited by the user.
+    flex: 1;
+    padding: 1rem;
+    // disable chrome outline
     caret-color: transparent;
 
     h1 {
@@ -194,10 +229,30 @@ const CanvaWrapper = styled.div`
       margin-bottom: 10px;
     }
 
+    // Link styling
+    a {
+      color: #2563eb;
+      text-decoration: underline;
+      cursor: pointer;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: #1d4ed8;
+        text-decoration: none;
+      }
+    }
+
     ul,
     ol {
       padding: 0 1rem;
       padding-left: 20px;
+    }
+
+    ul {
+      list-style-type: disc;
+    }
+
+    ol {
       list-style-type: decimal;
     }
 
